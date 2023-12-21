@@ -193,6 +193,7 @@ export function Menu({
   isFrontendRoute = () => false,
 }: MenuProps) {
   const [showMenu, setMenu] = useState<MenuMode>('horizontal');
+  const [toggledVis, setToggledVis] = useState(true);
   const screens = useBreakpoint();
   const uiConfig = useUiConfig();
   const theme = useTheme();
@@ -208,6 +209,18 @@ export function Menu({
     window.addEventListener('resize', windowResize);
     return () => window.removeEventListener('resize', windowResize);
   }, []);
+
+  useEffect(() => {
+    window.onmessage = (event: any): void => {
+      console.log('This is the event ', event);
+      if (
+        event.data.type === 'toggle-menu' &&
+        event.data.id === 'EmbeddedApplicationMessage'
+      ) {
+        setToggledVis(!toggledVis);
+      }
+    };
+  });
 
   enum paths {
     EXPLORE = '/explore',
@@ -295,69 +308,78 @@ export function Menu({
     );
   };
   return (
-    <StyledHeader className="top" id="main-menu" role="navigation">
-      <Global styles={globalStyles(theme)} />
-      <Row>
-        <Col md={16} xs={24}>
-          <Tooltip
-            id="brand-tooltip"
-            placement="bottomLeft"
-            title={brand.tooltip}
-            arrowPointAtCenter
-          >
-            {isFrontendRoute(window.location.pathname) ? (
-              <GenericLink className="navbar-brand" to={brand.path}>
-                <img src={brand.icon} alt={brand.alt} />
-              </GenericLink>
-            ) : (
-              <a className="navbar-brand" href={brand.path}>
-                <img src={brand.icon} alt={brand.alt} />
-              </a>
-            )}
-          </Tooltip>
-          {brand.text && (
-            <div className="navbar-brand-text">
-              <span>{brand.text}</span>
-            </div>
-          )}
-          <DropdownMenu
-            mode={showMenu}
-            data-test="navbar-top"
-            className="main-nav"
-            selectedKeys={activeTabs}
-          >
-            {menu.map((item, index) => {
-              const props = {
-                index,
-                ...item,
-                isFrontendRoute: isFrontendRoute(item.url),
-                childs: item.childs?.map(c => {
-                  if (typeof c === 'string') {
-                    return c;
-                  }
+    <>
+      {toggledVis && (
+        <StyledHeader
+          className="top"
+          id="main-menu"
+          style={{ height: toggledVis ? '100%' : '0%' }}
+          role="navigation"
+        >
+          <Global styles={globalStyles(theme)} />
+          <Row>
+            <Col md={16} xs={24}>
+              <Tooltip
+                id="brand-tooltip"
+                placement="bottomLeft"
+                title={brand.tooltip}
+                arrowPointAtCenter
+              >
+                {isFrontendRoute(window.location.pathname) ? (
+                  <GenericLink className="navbar-brand" to={brand.path}>
+                    <img src={brand.icon} alt={brand.alt} />
+                  </GenericLink>
+                ) : (
+                  <a className="navbar-brand" href={brand.path}>
+                    <img src={brand.icon} alt={brand.alt} />
+                  </a>
+                )}
+              </Tooltip>
+              {brand.text && (
+                <div className="navbar-brand-text">
+                  <span>{brand.text}</span>
+                </div>
+              )}
+              <DropdownMenu
+                mode={showMenu}
+                data-test="navbar-top"
+                className="main-nav"
+                selectedKeys={activeTabs}
+              >
+                {menu.map((item, index) => {
+                  const props = {
+                    index,
+                    ...item,
+                    isFrontendRoute: isFrontendRoute(item.url),
+                    childs: item.childs?.map(c => {
+                      if (typeof c === 'string') {
+                        return c;
+                      }
 
-                  return {
-                    ...c,
-                    isFrontendRoute: isFrontendRoute(c.url),
+                      return {
+                        ...c,
+                        isFrontendRoute: isFrontendRoute(c.url),
+                      };
+                    }),
                   };
-                }),
-              };
 
-              return renderSubMenu(props);
-            })}
-          </DropdownMenu>
-        </Col>
-        <Col md={8} xs={24}>
-          <RightMenu
-            align={screens.md ? 'flex-end' : 'flex-start'}
-            settings={settings}
-            navbarRight={navbarRight}
-            isFrontendRoute={isFrontendRoute}
-            environmentTag={environmentTag}
-          />
-        </Col>
-      </Row>
-    </StyledHeader>
+                  return renderSubMenu(props);
+                })}
+              </DropdownMenu>
+            </Col>
+            <Col md={8} xs={24}>
+              <RightMenu
+                align={screens.md ? 'flex-end' : 'flex-start'}
+                settings={settings}
+                navbarRight={navbarRight}
+                isFrontendRoute={isFrontendRoute}
+                environmentTag={environmentTag}
+              />
+            </Col>
+          </Row>
+        </StyledHeader>
+      )}
+    </>
   );
 }
 
